@@ -23,7 +23,12 @@ class OrderService:
             raise Exception("服务项目不可用")
 
         # 转换服务时间为datetime对象
-        service_time = datetime.datetime.fromisoformat(data['service_time'])
+        # 处理HTML datetime-local输入的格式（YYYY-MM-DDTHH:MM）
+        service_time_str = data['service_time']
+        # 如果不包含秒数，则添加:00
+        if len(service_time_str) == 16:  # 格式为 YYYY-MM-DDTHH:MM
+            service_time_str += ':00'
+        service_time = datetime.datetime.fromisoformat(service_time_str)
         
         # 创建订单
         order = Order(

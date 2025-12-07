@@ -13,6 +13,7 @@ from app.api.therapist import therapist_bp
 from app.api.order import order_bp
 from app.api.service import service_bp
 from app.api.feedback import feedback_bp
+from app.api.message import message_bp
 
 # 导入配置
 from config import config
@@ -57,6 +58,7 @@ def create_app(config_name=None):
     app.register_blueprint(order_bp, url_prefix='/api/order')
     app.register_blueprint(service_bp, url_prefix='/api/service')
     app.register_blueprint(feedback_bp, url_prefix='/api/feedback')
+    app.register_blueprint(message_bp, url_prefix='/api/message')
 
     # 健康检查端点
     @app.route('/health')
