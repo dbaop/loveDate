@@ -61,6 +61,12 @@
         button.info:hover {
             background-color: #0b7dda;
         }
+        button.success {
+            background-color: #4CAF50;
+        }
+        button.success:hover {
+            background-color: #45a049;
+        }
         .response {
             margin-top: 10px;
             padding: 10px;
@@ -113,6 +119,150 @@
             border: 1px solid #eee;
             border-radius: 5px;
         }
+        
+        /* 治疗师列表样式 */
+        .therapists-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .therapist-item {
+            border: 1px solid #eee;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #fafafa;
+            width: calc(33.333% - 20px);
+            box-sizing: border-box;
+            transition: box-shadow 0.3s;
+        }
+        
+        .therapist-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .therapist-item h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        
+        .therapist-item p {
+            margin: 8px 0;
+            color: #666;
+        }
+        
+        .book-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 10px 0 0 0;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .book-button:hover {
+            background-color: #45a049;
+        }
+        
+        /* 服务项目选择界面样式 */
+        .service-selection-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .service-selection-container h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .service-selection-container > div {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .service-selection-list {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .service-selection-item {
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        
+        .service-selection-item h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .service-selection-item p {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .select-button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 10px 0 0 0;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .select-button:hover {
+            background-color: #0b7dda;
+        }
+        
+        .cancel-button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 10px 0 0 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .cancel-button:hover {
+            background-color: #da190b;
+        }
     </style>
 </head>
 <body>
@@ -146,6 +296,7 @@
     <div class="test-section">
         <h2>3. 获取服务列表</h2>
         <button onclick="testGetServices()">获取服务列表</button>
+        <div id="services-list" class="services-list"></div>
         <div id="services-response" class="response"></div>
     </div>
 
@@ -154,10 +305,14 @@
         <h2>4. 获取治疗师列表</h2>
         <button onclick="testGetTherapists()">获取治疗师列表</button>
         <div id="therapists-response" class="response"></div>
+        <div id="therapists-list" class="therapists-container"></div>
     </div>
+    
+    <!-- 服务项目选择界面 -->
+    <div id="service-selection" class="service-selection-container"></div>
 
     <!-- 创建订单测试 -->
-    <div class="test-section">
+    <div id="create-order-section" class="test-section">
         <h2>5. 创建订单</h2>
         <div class="form-row">
             <input type="number" id="create-order-therapist-id" placeholder="技师ID" value="5">
@@ -358,7 +513,60 @@
             });
 
             const result = await response.json();
+            
+            if (result.data && Array.isArray(result.data)) {
+                // 显示服务列表
+                const servicesList = document.getElementById('services-list');
+                servicesList.innerHTML = '';
+                
+                result.data.forEach(service => {
+                    const serviceItem = document.createElement('div');
+                    serviceItem.className = 'service-item';
+                    serviceItem.innerHTML = `
+                        <h3>${service.name}</h3>
+                        <p>价格: ¥${service.price.toFixed(2)}</p>
+                        <p>时长: ${service.duration}分钟</p>
+                        <p>${service.description || '无描述'}</p>
+                        <button onclick="viewServiceDetail(${service.id})" class="info">查看详情</button>
+                        <button onclick="selectServiceForOrder(${service.id}, '${service.name}')" class="success">立即下单</button>
+                    `;
+                    servicesList.appendChild(serviceItem);
+                });
+            } else {
+                document.getElementById('services-list').innerHTML = '<p>获取服务列表失败</p>';
+                console.error('获取服务列表失败，API返回结构不正确:', result);
+            }
+            
             document.getElementById('services-response').textContent = JSON.stringify(result, null, 2);
+        }
+        
+        // 查看服务详情
+        async function viewServiceDetail(serviceId) {
+            const response = await fetch(`/api/service/items/${serviceId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            });
+            
+            const result = await response.json();
+            if (result.code === 200 && result.data) {
+                const service = result.data;
+                alert(`服务详情:\n名称: ${service.name}\n价格: ¥${service.price.toFixed(2)}\n时长: ${service.duration}分钟\n描述: ${service.description || '无描述'}`);
+            } else {
+                alert('获取服务详情失败');
+                console.error('获取服务详情失败:', result);
+            }
+        }
+        
+        // 选择服务用于下单
+        function selectServiceForOrder(serviceId, serviceName) {
+            // 将服务ID填充到创建订单的表单中
+            document.getElementById('create-order-service-item-id').value = serviceId;
+            alert(`已选择服务: ${serviceName}\n请选择治疗师并填写其他订单信息后点击创建订单`);
+            
+            // 自动滚动到创建订单区域
+            document.getElementById('create-order-service-item-id').scrollIntoView({ behavior: 'smooth' });
         }
 
         // 获取治疗师列表
@@ -371,7 +579,100 @@
             });
 
             const result = await response.json();
-            document.getElementById('therapists-response').textContent = JSON.stringify(result, null, 2);
+            
+            if (result.code === 200 && result.data && Array.isArray(result.data)) {
+                // 显示治疗师列表
+                const therapistsList = document.getElementById('therapists-list');
+                therapistsList.innerHTML = '';
+                
+                result.data.forEach(therapist => {
+                    const therapistItem = document.createElement('div');
+                    therapistItem.className = 'therapist-item';
+                    therapistItem.innerHTML = `
+                        <h3>${therapist.name}</h3>
+                        <p>ID: ${therapist.id}</p>
+                        <p>年龄: ${therapist.age}岁</p>
+                        <p>评分: ${therapist.rating.toFixed(1)}星</p>
+                        <p>服务次数: ${therapist.service_count}</p>
+                        <p>专长: ${therapist.specialty}</p>
+                        <p>经验: ${therapist.experience_years}年</p>
+                        <p>${therapist.introduction || '无自我介绍'}</p>
+                        <button onclick="bookTherapist(${therapist.id}, '${therapist.name}')" class="book-button">预定</button>
+                    `;
+                    therapistsList.appendChild(therapistItem);
+                });
+            } else {
+                document.getElementById('therapists-list').innerHTML = '<p>获取治疗师列表失败</p>';
+                console.error('获取治疗师列表失败，API返回结构不正确:', result);
+            }
+        }
+        
+        // 预定治疗师 - 显示服务项目选择
+        async function bookTherapist(therapistId, therapistName) {
+            // 获取该治疗师的服务项目
+            const response = await fetch(`/api/therapist/${therapistId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.code === 200 && result.data) {
+                const therapist = result.data;
+                const serviceItems = therapist.service_items || [];
+                
+                // 显示服务项目选择界面
+                const serviceSelection = document.getElementById('service-selection');
+                serviceSelection.innerHTML = `
+                    <h3>选择 ${therapistName} 的服务项目</h3>
+                    <div class="service-selection-list"></div>
+                    <button onclick="closeServiceSelection()" class="cancel-button">取消</button>
+                `;
+                
+                const serviceList = serviceSelection.querySelector('.service-selection-list');
+                
+                if (serviceItems.length > 0) {
+                    serviceItems.forEach(item => {
+                        const serviceItem = document.createElement('div');
+                        serviceItem.className = 'service-selection-item';
+                        serviceItem.innerHTML = `
+                            <h4>${item.name}</h4>
+                            <p>价格: ¥${item.price.toFixed(2)}</p>
+                            <p>时长: ${item.duration}分钟</p>
+                            <p>${item.description || '无描述'}</p>
+                            <button onclick="createOrderForTherapist(${therapistId}, ${item.id}, '${therapistName}', '${item.name}')" class="select-button">选择此服务</button>
+                        `;
+                        serviceList.appendChild(serviceItem);
+                    });
+                } else {
+                    serviceList.innerHTML = '<p>该治疗师暂无服务项目</p>';
+                }
+                
+                // 显示服务选择区域
+                serviceSelection.style.display = 'block';
+            } else {
+                alert('获取治疗师信息失败');
+            }
+        }
+        
+        // 关闭服务选择界面
+        function closeServiceSelection() {
+            document.getElementById('service-selection').style.display = 'none';
+        }
+        
+        // 为治疗师创建订单
+        function createOrderForTherapist(therapistId, serviceItemId, therapistName, serviceName) {
+            // 填充订单创建表单
+            document.getElementById('create-order-therapist-id').value = therapistId;
+            document.getElementById('create-order-service-item-id').value = serviceItemId;
+            
+            // 显示订单创建区域
+            document.getElementById('service-selection').style.display = 'none';
+            document.getElementById('create-order-section').scrollIntoView({ behavior: 'smooth' });
+            
+            alert(`请填写订单信息以预定 ${therapistName} 的 ${serviceName}`);
         }
 
         // 创建订单

@@ -1,10 +1,9 @@
 from main import create_app
-from flask_migrate import MigrateCommand
-from flask_script import Manager
+from app import db
 
 app = create_app()
-manager = Manager(app)
-manager.add_command('db', MigrateCommand)
 
 if __name__ == '__main__':
-    manager.run()
+    with app.app_context():
+        # 直接创建所有表，确保新添加的表被创建
+        db.create_all()

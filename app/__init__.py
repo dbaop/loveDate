@@ -10,6 +10,7 @@ from app.models.therapist import Therapist
 from app.models.order import Order
 from app.models.service import Service
 from app.models.feedback import Feedback
+from app.models.sms_code import SMSCode
 
 
 def init_app(app: Flask):

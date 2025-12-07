@@ -1,6 +1,7 @@
 from main import create_app, db
 from app.models.therapist import Therapist
 from app.models.user import User
+from app.models.service import Service
 
 def create_test_therapists():
     app = create_app()
@@ -82,6 +83,11 @@ def create_test_therapists():
                     avatar=therapist_data['avatar'],
                     introduction=therapist_data['introduction']
                 )
+                
+                # 关联所有服务项目
+                all_services = Service.query.all()
+                therapist.service_items = all_services
+                
                 db.session.add(therapist)
                 created_count += 1
             else:

@@ -11,29 +11,29 @@ with app.app_context():
         # 添加默认服务套餐
         default_services = [
             {
-                'name': 'Classic Full Body Massage',
-                'description': '90 minutes full body oil massage, relieve fatigue and relax body and mind',
+                'name': '经典全身按摩',
+                'description': '90分钟全身精油按摩，缓解疲劳，放松身心',
                 'duration': 90,
                 'price': 198.0,
                 'category': 'classic'
             },
             {
-                'name': 'Premium SPA Package',
-                'description': '120 minutes luxury SPA experience, including oil massage, hot stone therapy and facial care',
+                'name': '豪华SPA套餐',
+                'description': '120分钟豪华SPA体验，包括精油按摩、热石疗法和面部护理',
                 'duration': 120,
                 'price': 298.0,
                 'category': 'special'
             },
             {
-                'name': 'Local Deep Massage',
-                'description': '60 minutes deep massage for shoulder/neck or waist, relieve muscle tension',
+                'name': '局部深度按摩',
+                'description': '60分钟肩颈或腰部深度按摩，缓解肌肉紧张',
                 'duration': 60,
                 'price': 128.0,
                 'category': 'classic'
             },
             {
-                'name': 'Oil Back Massage Package',
-                'description': '75 minutes back oil massage, promote blood circulation and relieve pressure',
+                'name': '精油背部按摩套餐',
+                'description': '75分钟背部精油按摩，促进血液循环，缓解压力',
                 'duration': 75,
                 'price': 168.0,
                 'category': 'special'

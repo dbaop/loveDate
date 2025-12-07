@@ -15,6 +15,10 @@ class User(db.Model):
     avatar = Column(String(255))
     status = Column(Integer, default=1)  # 1:正常, 0:禁用
     role = Column(String(20), default='user')  # user:普通用户, therapist:治疗师, admin:管理员
+    wx_openid = Column(String(100), unique=True)  # 微信openid
+    wx_unionid = Column(String(100), unique=True)  # 微信unionid（如果有）
+    wx_nickname = Column(String(100))  # 微信昵称
+    wx_avatar_url = Column(String(255))  # 微信头像URL
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 

@@ -1,6 +1,7 @@
 from app.models.user import User, UserAddress
 from app import db
 from app.utils.auth import generate_token
+from app.services.sms_service import SMSService
 import hashlib
 
 
@@ -8,31 +9,52 @@ class UserService:
     @staticmethod
     def register(data):
         """用户注册"""
-        # 验证必要参数
-        if 'phone' not in data:
-            raise Exception("缺少必要参数: phone")
-        if 'username' not in data:
-            raise Exception("缺少必要参数: username")
+        try:
+            import logging
+            logger = logging.getLogger('user_service')
             
-        # 检查手机号是否已存在
-        existing_user = User.query.filter_by(phone=data['phone']).first()
-        if existing_user:
-            raise Exception("手机号已注册")
+            logger.info(f"Register request received with data: {data}")
+            
+            # 验证必要参数
+            if 'phone' not in data:
+                logger.error("缺少必要参数: phone")
+                raise ValueError("缺少必要参数: phone")
+            if 'username' not in data:
+                logger.error("缺少必要参数: username")
+                raise ValueError("缺少必要参数: username")
+                
+            phone = data['phone']
+            username = data['username']
+            role = data.get('role', 'user')
+            
+            logger.info(f"Phone: {phone}, Username: {username}, Role: {role}")
+            
+            # 检查手机号是否已存在
+            existing_user = User.query.filter_by(phone=phone).first()
+            if existing_user:
+                logger.error(f"手机号已注册: {phone}")
+                raise ValueError("手机号已注册")
 
-        # 创建用户
-        user = User(
-            username=data['username'],
-            phone=data['phone'],
-            role=data.get('role', 'user')  # 保存角色，默认普通用户
-        )
+            # 创建用户
+            user = User(
+                username=username,
+                phone=phone,
+                role=role
+            )
 
-        # 如果提供了密码，则进行加密存储
-        if 'password' in data:
-            user.password_hash = hashlib.sha256(data['password'].encode()).hexdigest()
+            # 如果提供了密码，则进行加密存储
+            if 'password' in data:
+                user.password_hash = hashlib.sha256(data['password'].encode()).hexdigest()
+                logger.info("密码已加密存储")
 
-        db.session.add(user)
-        db.session.commit()
-        return user
+            db.session.add(user)
+            db.session.commit()
+            logger.info(f"用户注册成功: {user.id}")
+            return user
+        except Exception as e:
+            logger.error(f"注册失败: {str(e)}", exc_info=True)
+            db.session.rollback()
+            raise e
 
     @staticmethod
     def login(data):
@@ -53,6 +75,36 @@ class UserService:
             if user.password_hash != password_hash:
                 raise Exception("密码错误")
 
+        # 生成token
+        token = generate_token(user.id)
+        return token
+
+    @staticmethod
+    def login_with_sms(data):
+        """通过短信验证码登录"""
+        # 验证必要参数
+        if 'phone' not in data or 'code' not in data:
+            raise Exception("缺少必要参数: phone或code")
+        
+        phone = data['phone']
+        code = data['code']
+        
+        # 验证短信验证码
+        SMSService.verify_code(phone, code)
+        
+        # 检查用户是否存在，如果不存在则自动注册
+        user = User.query.filter_by(phone=phone).first()
+        if not user:
+            # 自动注册用户
+            username = phone[-8:]  # 使用手机号后8位作为用户名
+            user = User(
+                username=username,
+                phone=phone,
+                role='user'
+            )
+            db.session.add(user)
+            db.session.commit()
+        
         # 生成token
         token = generate_token(user.id)
         return token
