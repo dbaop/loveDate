@@ -102,6 +102,7 @@ def get_message_history(current_user):
 
 
 @message_bp.route('/unread-count', methods=['GET'])
+@message_bp.route('/unread', methods=['GET'])
 @token_required
 def get_unread_count(current_user):
     """
@@ -181,3 +182,23 @@ def get_conversation_list(current_user):
             'code': 400,
             'message': str(e)
         }), 400
+
+
+@message_bp.route('/list', methods=['GET'])
+def get_message_list():
+    """
+    获取消息列表（直接返回消息列表，适配前端数据格式）
+    注意：此函数不使用@token_required装饰器，因为它直接调用了已装饰的get_conversation_list()函数
+    """
+    # 调用已装饰的函数获取会话列表数据
+    response = get_conversation_list()
+    
+    # 从响应中提取数据
+    data = response.get_json()
+    
+    # 直接返回items列表，适配前端数据格式
+    return jsonify({
+        'code': 200,
+        'message': '获取消息列表成功',
+        'data': data['data']['items']
+    }), 200

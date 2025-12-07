@@ -14,6 +14,7 @@ from app.api.order import order_bp
 from app.api.service import service_bp
 from app.api.feedback import feedback_bp
 from app.api.message import message_bp
+from app.api.websocket import socketio
 
 # 导入配置
 from config import config
@@ -59,6 +60,9 @@ def create_app(config_name=None):
     app.register_blueprint(service_bp, url_prefix='/api/service')
     app.register_blueprint(feedback_bp, url_prefix='/api/feedback')
     app.register_blueprint(message_bp, url_prefix='/api/message')
+    
+    # 初始化SocketIO
+    socketio.init_app(app, cors_allowed_origins="*")
 
     # 健康检查端点
     @app.route('/health')
@@ -75,4 +79,5 @@ def create_app(config_name=None):
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # 改回端口5000，适配前端配置
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)

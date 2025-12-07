@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from app.services.therapist_service import TherapistService
-from app.utils.auth import token_required
+from app.services.order_service import OrderService
+from app.utils.auth import token_required, admin_required
+from app.utils.file_utils import handle_file_upload
 
 therapist_bp = Blueprint('therapist', __name__)
 
@@ -9,15 +11,57 @@ therapist_bp = Blueprint('therapist', __name__)
 def register():
     """技师注册"""
     try:
-        data = request.get_json()
+        
+        # 获取表单数据
+        data = request.form.to_dict()
+        
+        # 获取并处理上传的文件
+        id_card_front = request.files.get('id_card_front')
+        id_card_back = request.files.get('id_card_back')
+        id_card_handheld = request.files.get('id_card_handheld')
+        
+        # 验证必填参数
+        if not data.get('name'):
+            return jsonify({
+                'code': 400,
+                'message': '姓名不能为空'
+            }), 400
+            
+        if not data.get('phone'):
+            return jsonify({
+                'code': 400,
+                'message': '手机号不能为空'
+            }), 400
+            
+        if not data.get('id_card'):
+            return jsonify({
+                'code': 400,
+                'message': '身份证号不能为空'
+            }), 400
+            
+        # 验证身份证照片
+        if not id_card_front or not id_card_back or not id_card_handheld:
+            return jsonify({
+                'code': 400,
+                'message': '请上传身份证正反面和手持身份证照片'
+            }), 400
+        
+        # 处理文件上传
+        data['id_card_front'] = handle_file_upload(id_card_front)
+        data['id_card_back'] = handle_file_upload(id_card_back)
+        data['id_card_handheld'] = handle_file_upload(id_card_handheld)
+        
+        # 调用服务层注册技师
         therapist = TherapistService.register(data)
+        
         return jsonify({
             'code': 200,
-            'message': '注册成功，请等待审核',
+            'message': '注册成功，请等待管理员审核',
             'data': {
                 'id': therapist.id,
                 'name': therapist.name,
-                'phone': therapist.phone
+                'phone': therapist.phone,
+                'status': therapist.status
             }
         })
     except Exception as e:
@@ -74,6 +118,7 @@ def get_therapist_detail(therapist_id):
             'name': therapist.name,
             'age': therapist.age,
             'avatar': therapist.avatar,
+            'gender': therapist.gender,
             'rating': therapist.rating,
             'service_count': therapist.service_count,
             'specialty': therapist.specialty,
@@ -99,6 +144,94 @@ def get_therapist_detail(therapist_id):
             } for f in therapist.feedbacks[:3]]  # 返回前3条评价
         }
     })
+
+
+@therapist_bp.route('/pending/list', methods=['GET'])
+@token_required
+@admin_required
+def get_pending_therapists(current_user):
+    """获取待审核技师列表"""
+    try:
+        page = int(request.args.get('page', 1))
+        size = int(request.args.get('size', 10))
+        
+        result = TherapistService.get_pending_list(page, size)
+        
+        return jsonify({
+            'code': 200,
+            'message': 'success',
+            'data': {
+                'items': [{
+                    'id': t.id,
+                    'name': t.name,
+                    'phone': t.phone,
+                    'gender': t.gender,
+                    'id_card': t.id_card,
+                    'id_card_front': t.id_card_front,
+                    'id_card_back': t.id_card_back,
+                    'id_card_handheld': t.id_card_handheld,
+                    'experience_years': t.experience_years,
+                    'specialty': t.specialty,
+                    'created_at': t.created_at.isoformat() if hasattr(t, 'created_at') else None
+                } for t in result['items']],
+                'total': result['total'],
+                'page': result['page'],
+                'size': result['size']
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'code': 400,
+            'message': str(e)
+        }), 400
+
+
+@therapist_bp.route('/<int:therapist_id>/approve', methods=['POST'])
+@token_required
+@admin_required
+def approve_therapist(current_user, therapist_id):
+    """审核通过技师"""
+    try:
+        therapist = TherapistService.approve_therapist(therapist_id)
+        
+        return jsonify({
+            'code': 200,
+            'message': '审核通过',
+            'data': {
+                'id': therapist.id,
+                'name': therapist.name,
+                'status': therapist.status
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'code': 400,
+            'message': str(e)
+        }), 400
+
+
+@therapist_bp.route('/<int:therapist_id>/reject', methods=['POST'])
+@token_required
+@admin_required
+def reject_therapist(current_user, therapist_id):
+    """拒绝技师申请"""
+    try:
+        therapist = TherapistService.reject_therapist(therapist_id)
+        
+        return jsonify({
+            'code': 200,
+            'message': '已拒绝',
+            'data': {
+                'id': therapist.id,
+                'name': therapist.name,
+                'status': therapist.status
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'code': 400,
+            'message': str(e)
+        }), 400
 
 
 @therapist_bp.route('/my/services', methods=['GET'])

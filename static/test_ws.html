@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket测试</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>WebSocket连接测试</h1>
+    <div id="output"></div>
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            const div = document.createElement('div');
+            div.textContent = new Date().toLocaleString() + ': ' + message;
+            output.appendChild(div);
+            console.log(message);
+        }
+        
+        // 生成测试token
+        function generateTestToken() {
+            const payload = {
+                user_id: 1,
+                exp: Math.floor(Date.now() / 1000) + 3600
+            };
+            
+            // 使用简单的Base64编码（实际应用中应该使用JWT）
+            const base64Payload = btoa(JSON.stringify(payload));
+            return `test-token-${base64Payload}`;
+        }
+        
+        const token = generateTestToken();
+        log(`生成的测试token: ${token}`);
+        
+        // 连接到Socket.IO服务器
+        const socket = io('http://localhost:5000', {
+            transports: ['websocket'],
+            query: { token: token },
+            auth: { token: token },
+            timeout: 5000
+        });
+        
+        socket.on('connect', () => {
+            log('WebSocket连接成功');
+        });
+        
+        socket.on('connect_error', (error) => {
+            log('WebSocket连接错误: ' + error.message);
+        });
+        
+        socket.on('connected', (data) => {
+            log('服务器确认连接: ' + JSON.stringify(data));
+        });
+        
+        socket.on('disconnect', () => {
+            log('WebSocket连接断开');
+        });
+        
+        // 发送测试消息
+        setTimeout(() => {
+            const testMessage = {
+                receiver_id: 2,
+                receiver_role: 'therapist',
+                order_id: 1,
+                content: '测试消息'
+            };
+            
+            socket.emit('send_message', testMessage);
+            log('发送测试消息: ' + JSON.stringify(testMessage));
+        }, 2000);
+        
+        socket.on('message_sent', (data) => {
+            log('消息发送成功: ' + JSON.stringify(data));
+        });
+        
+        socket.on('error', (data) => {
+            log('服务器错误: ' + JSON.stringify(data));
+        });
+    </script>
+</body>
+</html>

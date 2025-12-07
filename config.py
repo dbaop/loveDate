@@ -54,6 +54,9 @@ class DevelopmentConfig(Config):
     # 开发环境数据库配置（SQLite）
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///aiyue_daojia_dev.db'
     
+    # 开发环境使用固定的JWT_SECRET_KEY，便于开发测试
+    JWT_SECRET_KEY = 'dev-secret-key-for-websocket-testing'
+    
     # 开发环境调试配置
     DEBUG_TB_ENABLED = True
     DEBUG_TB_INTERCEPT_REDIRECTS = False

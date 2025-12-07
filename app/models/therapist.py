@@ -10,7 +10,11 @@ class Therapist(db.Model):
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
     phone = Column(String(20), unique=True, nullable=False)
+    gender = Column(Integer)  # 性别: 1-男, 0-女
     id_card = Column(String(20))  # 身份证号
+    id_card_front = Column(String(255))  # 身份证正面照片
+    id_card_back = Column(String(255))  # 身份证反面照片
+    id_card_handheld = Column(String(255))  # 手持身份证照片
     age = Column(Integer)  # 年龄
     certification = Column(String(255))  # 资格证书
     experience_years = Column(Integer)  # 经验年限

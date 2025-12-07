@@ -12,16 +12,20 @@ class TherapistService:
         if existing_therapist:
             raise Exception("手机号已注册")
 
-        # 创建技师（直接通过审核）
+        # 创建技师（设置为待审核状态）
         therapist = Therapist(
             name=data['name'],
             phone=data['phone'],
+            gender=data.get('gender'),
             id_card=data.get('id_card'),
             certification=data.get('certification'),
             experience_years=data.get('experience_years'),
             specialty=data.get('specialty'),
             introduction=data.get('introduction'),
-            status=1  # 直接设置为正常状态
+            id_card_front=data.get('id_card_front'),
+            id_card_back=data.get('id_card_back'),
+            id_card_handheld=data.get('id_card_handheld'),
+            status=0  # 设置为待审核状态
         )
 
         db.session.add(therapist)
@@ -160,3 +164,43 @@ class TherapistService:
             return None
         
         return Therapist.query.filter_by(phone=user.phone).first()
+    
+    @staticmethod
+    def get_pending_list(page, size):
+        """获取待审核技师列表"""
+        query = Therapist.query.filter_by(status=0)  # 只查询待审核的技师
+        
+        # 按注册时间排序
+        query = query.order_by(Therapist.created_at.desc())
+        
+        # 分页
+        pagination = query.paginate(page=page, per_page=size, error_out=False)
+        
+        return {
+            'items': pagination.items,
+            'total': pagination.total,
+            'page': page,
+            'size': size
+        }
+    
+    @staticmethod
+    def approve_therapist(therapist_id):
+        """审核通过技师"""
+        therapist = Therapist.query.get(therapist_id)
+        if not therapist:
+            raise Exception("技师不存在")
+        
+        therapist.status = 1  # 设置为正常状态
+        db.session.commit()
+        return therapist
+    
+    @staticmethod
+    def reject_therapist(therapist_id):
+        """拒绝技师申请"""
+        therapist = Therapist.query.get(therapist_id)
+        if not therapist:
+            raise Exception("技师不存在")
+        
+        therapist.status = 2  # 设置为拒绝状态
+        db.session.commit()
+        return therapist
